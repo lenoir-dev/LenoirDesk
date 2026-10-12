@@ -1,0 +1,74 @@
+{
+  "uid": "relaydesk-operations",
+  "title": "RelayDesk Operations",
+  "tags": ["relaydesk", "pilot"],
+  "timezone": "browser",
+  "schemaVersion": 41,
+  "version": 1,
+  "refresh": "15s",
+  "time": {"from": "now-6h", "to": "now"},
+  "panels": [
+    {
+      "id": 1, "type": "timeseries", "title": "Outbox and runnable age (seconds)",
+      "datasource": {"type": "prometheus", "uid": "relaydesk-prometheus"},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+      "targets": [
+        {"expr": "relaydesk_operational_value{measure=\"oldest_outbox_seconds\"}", "legendFormat": "unpublished outbox", "refId": "A"},
+        {"expr": "relaydesk_operational_value{measure=\"oldest_due_seconds\"}", "legendFormat": "overdue actions", "refId": "B"},
+        {"expr": "relaydesk_operational_value{measure=\"oldest_pending_job_seconds\"}", "legendFormat": "pending jobs", "refId": "C"}
+      ]
+    },
+    {
+      "id": 2, "type": "timeseries", "title": "Reconciliation coverage",
+      "datasource": {"type": "prometheus", "uid": "relaydesk-prometheus"},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+      "targets": [
+        {"expr": "relaydesk_operational_value{measure=\"oldest_reconcile_lag_seconds\"}", "legendFormat": "oldest lag seconds", "refId": "A"},
+        {"expr": "relaydesk_operational_value{measure=\"coverage_gaps\"}", "legendFormat": "coverage gaps", "refId": "B"}
+      ]
+    },
+    {
+      "id": 3, "type": "timeseries", "title": "Unknown, dead and expired leases",
+      "datasource": {"type": "prometheus", "uid": "relaydesk-prometheus"},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
+      "targets": [
+        {"expr": "relaydesk_operational_value{measure=\"unknown_actions\"}", "legendFormat": "unknown", "refId": "A"},
+        {"expr": "relaydesk_operational_value{measure=\"dead_actions\"}", "legendFormat": "dead", "refId": "B"},
+        {"expr": "relaydesk_operational_value{measure=\"expired_leases\"}", "legendFormat": "expired leases", "refId": "C"}
+      ]
+    },
+    {
+      "id": 4, "type": "timeseries", "title": "Provider request rate by outcome",
+      "datasource": {"type": "prometheus", "uid": "relaydesk-prometheus"},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
+      "targets": [
+        {"expr": "sum by (provider,status_class) (rate(relaydesk_provider_requests_total[5m]))", "legendFormat": "{{provider}} {{status_class}}", "refId": "A"}
+      ]
+    },
+    {
+      "id": 5, "type": "timeseries", "title": "Webhook acceptance and rejection rate",
+      "datasource": {"type": "prometheus", "uid": "relaydesk-prometheus"},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 16},
+      "targets": [
+        {"expr": "sum by (result) (rate(relaydesk_webhook_requests_total[5m]))", "legendFormat": "{{result}}", "refId": "A"}
+      ]
+    },
+    {
+      "id": 6, "type": "timeseries", "title": "Storage and observation age",
+      "datasource": {"type": "prometheus", "uid": "relaydesk-prometheus"},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 16},
+      "targets": [
+        {"expr": "relaydesk_operational_value{measure=\"storage_bytes\"}", "legendFormat": "database bytes", "refId": "A"},
+        {"expr": "relaydesk_operational_value{measure=\"sample_age_seconds\"}", "legendFormat": "observation age seconds", "refId": "B"}
+      ]
+    },
+    {
+      "id": 7, "type": "stat", "title": "Outbound worker enabled (1=yes)",
+      "datasource": {"type": "prometheus", "uid": "relaydesk-prometheus"},
+      "gridPos": {"h": 5, "w": 12, "x": 0, "y": 24},
+      "targets": [
+        {"expr": "relaydesk_worker_outbound_enabled", "legendFormat": "outbound enabled", "refId": "A"}
+      ]
+    }
+  ]
+}

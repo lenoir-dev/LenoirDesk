@@ -1,0 +1,94 @@
+groups:
+  - name: relaydesk-operations
+    rules:
+      - alert: RelayDeskWorkerUnavailable
+        expr: up{job="relaydesk-worker"} == 0
+        for: 2m
+        labels: {severity: critical}
+        annotations:
+          summary: "RelayDesk worker metrics unavailable"
+          runbook: "docs/runbooks/operations.md#worker-crash-or-restart"
+      - alert: RelayDeskOutboundDisabled
+        expr: relaydesk_worker_outbound_enabled == 0
+        for: 2m
+        labels: {severity: critical}
+        annotations:
+          summary: "RelayDesk worker is idle because outbound execution is disabled"
+          runbook: "docs/runbooks/operations.md#worker-crash-or-restart"
+      - alert: RelayDeskOutboxDelayed
+        expr: relaydesk_operational_value{measure="oldest_outbox_seconds"} > 300
+        for: 5m
+        labels: {severity: warning}
+        annotations:
+          summary: "Unpublished outbox item older than five minutes"
+          runbook: "docs/runbooks/operations.md#nats-unavailable"
+      - alert: RelayDeskRunnableOverdue
+        expr: relaydesk_operational_value{measure="oldest_due_seconds"} > 300
+        for: 5m
+        labels: {severity: warning}
+        annotations:
+          summary: "Runnable business action overdue"
+          runbook: "docs/runbooks/operations.md#large-tenant-backlog"
+      - alert: RelayDeskCoverageGap
+        expr: relaydesk_operational_value{measure="coverage_gaps"} > 0
+        for: 5m
+        labels: {severity: warning}
+        annotations:
+          summary: "Stripe reconciliation has an unscanned period"
+          runbook: "docs/runbooks/operations.md#reconciliation-coverage-gap"
+      - alert: RelayDeskReconciliationLag
+        expr: relaydesk_operational_value{measure="oldest_reconcile_lag_seconds"} > 3600
+        for: 10m
+        labels: {severity: warning}
+        annotations:
+          summary: "Stripe event discovery is more than one hour behind"
+          runbook: "docs/runbooks/operations.md#reconciliation-coverage-gap"
+      - alert: RelayDeskAuthFailures
+        expr: increase(relaydesk_provider_events_total{kind="blocked_auth"}[10m]) > 5
+        for: 5m
+        labels: {severity: warning}
+        annotations:
+          summary: "Persistent provider authentication failures"
+          runbook: "docs/runbooks/operations.md#oauth-token-expired-or-revoked"
+      - alert: RelayDeskUnknownActionAged
+        expr: relaydesk_operational_value{measure="oldest_unknown_seconds"} > 900
+        for: 5m
+        labels: {severity: warning}
+        annotations:
+          summary: "Uncertain external effect needs operator review"
+          runbook: "docs/runbooks/operations.md#slack-unknown-outcome"
+      - alert: RelayDeskDeadActionAged
+        expr: relaydesk_operational_value{measure="oldest_dead_seconds"} > 3600
+        for: 5m
+        labels: {severity: warning}
+        annotations:
+          summary: "Dead action has remained unresolved"
+          runbook: "docs/runbooks/operations.md#hubspot-prolonged-outage"
+      - alert: RelayDeskStoragePressure
+        expr: relaydesk_operational_value{measure="storage_bytes"} > 2147483648
+        for: 15m
+        labels: {severity: warning}
+        annotations:
+          summary: "Pilot PostgreSQL database exceeds 2 GiB"
+          runbook: "docs/runbooks/operations.md#storage-pressure"
+      - alert: RelayDeskRecoveryStalled
+        expr: relaydesk_operational_value{measure="expired_leases"} > 0
+        for: 5m
+        labels: {severity: warning}
+        annotations:
+          summary: "Expired business leases are not being recovered"
+          runbook: "docs/runbooks/operations.md#worker-crash-or-restart"
+      - alert: RelayDeskDatabaseObservationStale
+        expr: relaydesk_operational_value{measure="sample_age_seconds"} > 90
+        for: 2m
+        labels: {severity: critical}
+        annotations:
+          summary: "Worker cannot refresh PostgreSQL business health"
+          runbook: "docs/runbooks/operations.md#postgresql-unavailable"
+      - alert: RelayDeskBrokerUnavailable
+        expr: relaydesk_operational_value{measure="broker_connected"} == 0
+        for: 2m
+        labels: {severity: critical}
+        annotations:
+          summary: "Worker lost NATS connection"
+          runbook: "docs/runbooks/operations.md#nats-unavailable"

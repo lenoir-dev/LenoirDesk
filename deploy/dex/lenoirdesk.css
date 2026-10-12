@@ -1,0 +1,43 @@
+/* First-party Dex local development theme. Password form and OIDC flow remain Dex-owned. */
+.theme-body {
+  min-height: 100vh;
+  color: #f7f0f3;
+  font: 15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+  background: radial-gradient(circle at 80% -15%,#4d203b,transparent 42%),
+    radial-gradient(circle at -15% 90%,#302438,transparent 36%),#171117;
+}
+.theme-navbar {
+  display: flex;
+  align-items: center;
+  height: 76px;
+  padding: 0 clamp(1rem,5vw,4rem);
+  border-bottom: 1px solid rgba(255,220,236,.12);
+  background: rgba(35,23,34,.8);
+  box-shadow: 0 14px 42px rgba(0,0,0,.14);
+}
+.theme-navbar__logo-wrap { display: flex; align-items: center; width: auto; height: auto; padding: 0; overflow: visible; }
+.theme-navbar__logo { display: block; width: 43px; height: 43px; max-height: none; }
+.dex-container { width: min(100% - 2rem,480px); min-width: 0; margin: clamp(2.5rem,9vh,7rem) auto; color: #f7f0f3; text-align: left; }
+.theme-panel {
+  padding: clamp(1.35rem,4vw,2.4rem);
+  border: 1px solid rgba(255,220,236,.16);
+  border-radius: 23px;
+  background: rgba(47,32,45,.89);
+  box-shadow: 0 28px 70px rgba(0,0,0,.34),inset 0 1px 0 rgba(255,255,255,.08);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+}
+.theme-heading { margin: 0 0 1.4rem; color: #fff4f8; font-size: clamp(1.65rem,4vw,2rem); font-weight: 690; line-height: 1.16; letter-spacing: -.04em; }
+.theme-form-row { display: block; margin: 1rem 0; }
+.theme-form-label { width: auto; margin: 0 0 .38rem; color: #e0cbd6; font-size: .84rem; font-weight: 650; text-align: left; }
+.theme-form-input { display: block; width: 100%; height: 46px; margin: 0; padding: .7rem .8rem; border: 1px solid #806373; border-radius: 11px; background: #211922; color: #fff; font: inherit; box-shadow: none; }
+.theme-form-input::placeholder { color: #ad96a5; }
+.theme-form-input:focus, .theme-form-input:active { outline: 3px solid #f1a8c4; outline-offset: 2px; border-color: #f1a8c4; color: #fff; }
+.theme-btn--primary, .theme-btn-provider { min-width: 0; width: 100%; min-height: 46px; margin-top: .4rem; padding: .65rem 1rem; border: 1px solid #a34e70; border-radius: 11px; background: #963858; color: #fff; font: inherit; font-weight: 680; box-shadow: 0 5px 16px rgba(0,0,0,.18); }
+.theme-btn--primary:hover, .theme-btn-provider:hover { background: #ad4b6c; color: #fff; }
+.theme-btn--primary:focus-visible, .theme-btn-provider:focus-visible, .theme-link-back a:focus-visible { outline: 3px solid #f1a8c4; outline-offset: 3px; }
+.theme-link-back { margin-top: 1rem; }
+.dex-subtle-text { color: #efb5ce; font-size: .83rem; }
+.dex-error-box { max-width: none; margin: .85rem 0; padding: .7rem .8rem; border: 1px solid #ffb1bf; border-radius: 9px; background: #542735; color: #ffcfda; }
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) { .theme-panel { background: #30232e; } }
+@media(max-width: 520px) { .theme-navbar { height: 65px; } .dex-container { margin-top: 2rem; } }

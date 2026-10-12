@@ -1,0 +1,66 @@
+/* Scoped LenoirDesk treatment for the vendored date calendar. */
+.historical-picker { container-type: inline-size; min-width: 0; }
+.historical-picker-row { display: grid; gap: .55rem; }
+@container (min-width: 350px) {
+  .historical-picker-row { grid-template-columns: minmax(0,1fr) minmax(0,1fr); }
+}
+.historical-picker-part { min-width: 0; }
+.historical-picker-part label { margin: .45rem 0 .3rem; color: var(--muted); font-size: .77rem; }
+.historical-picker-part input { max-width: none; min-width: 0; font-variant-numeric: tabular-nums; }
+.historical-picker-part .historical-date { cursor: pointer; background: var(--field-bg); }
+.historical-picker .field-help { display: block; margin-top: .45rem; color: var(--muted); font-size: .72rem; }
+[data-vc=calendar] {
+  z-index: 150;
+  max-width: calc(100vw - 20px);
+  min-width: min(17rem, calc(100vw - 20px));
+  border: 1px solid var(--glass-edge);
+  border-radius: 16px;
+  box-shadow: var(--shadow-raised), 0 0 0 1px var(--glass-highlight) inset;
+  -webkit-backdrop-filter: blur(22px) saturate(1.15);
+  backdrop-filter: blur(22px) saturate(1.15);
+  font: .9rem/1.35 -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, system-ui, sans-serif;
+  --vc-bg: var(--glass-popover);
+  --vc-color: var(--ink);
+  --vc-header-color: var(--ink);
+  --vc-title-color: var(--ink);
+  --vc-title-color-hover: var(--link);
+  --vc-title-color-disabled: var(--subtle);
+  --vc-week-day-color: var(--muted);
+  --vc-week-day-off-color: var(--accent-text);
+  --vc-date-bg: transparent;
+  --vc-date-color: var(--ink);
+  --vc-date-bg-hover: var(--wine-light);
+  --vc-date-color-hover: var(--ink);
+  --vc-date-selected-bg: var(--wine);
+  --vc-date-selected-color: #fff;
+  --vc-date-weekend-selected-bg: var(--wine);
+  --vc-date-weekend-selected-color: #fff;
+  --vc-date-weekend-outside-bg: transparent;
+  --vc-date-weekend-outside-color: var(--subtle);
+  --vc-date-weekend-disabled-color: var(--subtle);
+  --vc-date-weekend-disabled-outside-color: var(--subtle);
+  --vc-date-selected-outside-bg: var(--wine-light);
+  --vc-date-selected-outside-color: var(--ink);
+  --vc-date-weekend-color: var(--accent-text);
+  --vc-date-weekend-today-color: var(--accent-text);
+  --vc-date-today-bg: var(--soft-panel);
+  --vc-date-today-color: var(--accent-text);
+  --vc-date-outside-color: var(--subtle);
+  --vc-date-disabled-color: var(--subtle);
+  --vc-months-years-bg: var(--soft-panel);
+  --vc-months-years-bg-hover: var(--wine-light);
+  --vc-months-years-bg-selected: var(--wine);
+  --vc-months-years-color: var(--ink);
+  --vc-months-years-color-selected: #fff;
+  --vc-focus-outline-color: var(--focus);
+}
+[data-vc=calendar] button { box-shadow: none; font: inherit; }
+[data-vc=calendar] button:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+[data-vc=calendar] [data-vc-arrow]::before { display: grid; place-items: center; background: none; color: var(--ink); font-size: 1.55rem; line-height: 1; transform: none; }
+[data-vc=calendar] [data-vc-arrow=prev]::before { content: '‹'; }
+[data-vc=calendar] [data-vc-arrow=next]::before { content: '›'; }
+[data-vc=calendar] .vc-date__btn { min-height: 2.25rem; border-radius: 9px; }
+[data-vc=calendar] [data-vc=month], [data-vc=calendar] [data-vc=year] { color: var(--ink); }
+@media (prefers-reduced-motion: reduce) {
+  [data-vc=calendar], [data-vc=calendar] * { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}

@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="LenoirDesk">
+  <defs>
+    <linearGradient id="wine" x1="0" x2="1" y1="0" y2="1">
+      <stop stop-color="#9b3f60"/>
+      <stop offset=".52" stop-color="#742546"/>
+      <stop offset="1" stop-color="#42182c"/>
+    </linearGradient>
+  </defs>
+  <rect x="1" y="1" width="62" height="62" rx="17" fill="url(#wine)"/>
+  <rect x="1.5" y="1.5" width="61" height="61" rx="16.5" fill="none" stroke="#fff" stroke-opacity=".26"/>
+  <path d="M16.5 18.5v27h14" fill="none" stroke="#fff9f8" stroke-width="4.4" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M32 18.5h6c8.3 0 13.2 5.1 13.2 13.5S46.3 45.5 38 45.5h-6z" fill="none" stroke="#fff9f8" stroke-width="4.4" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

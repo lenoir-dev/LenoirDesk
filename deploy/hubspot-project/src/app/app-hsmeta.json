@@ -1,0 +1,26 @@
+{
+  "uid": "relaydesk_stage0_oauth",
+  "type": "app",
+  "config": {
+    "name": "RelayDesk",
+    "description": "Stage 0 test integration for synchronizing Stripe subscription status to HubSpot Contacts.",
+    "distribution": "private",
+    "isUserLevel": false,
+    "auth": {
+      "type": "oauth",
+      "redirectUrls": ["http://localhost:58080/oauth/hubspot/callback"],
+      "requiredScopes": [
+        "oauth",
+        "crm.objects.contacts.read",
+        "crm.objects.contacts.write"
+      ],
+      "optionalScopes": [],
+      "conditionallyRequiredScopes": []
+    },
+    "permittedUrls": {
+      "fetch": [],
+      "iframe": [],
+      "img": []
+    }
+  }
+}

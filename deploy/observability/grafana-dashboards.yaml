@@ -1,0 +1,7 @@
+apiVersion: 1
+providers:
+  - name: RelayDesk
+    folder: RelayDesk
+    type: file
+    options:
+      path: /var/lib/grafana/dashboards

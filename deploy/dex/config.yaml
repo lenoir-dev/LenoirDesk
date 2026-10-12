@@ -1,0 +1,25 @@
+issuer: http://127.0.0.1:5556/dex
+storage:
+  type: memory
+web:
+  http: 0.0.0.0:5556
+frontend:
+  dir: /srv/dex/web
+  issuer: LenoirDesk
+  logoURL: theme/lenoirdesk-mark.svg
+  theme: light
+oauth2:
+  responseTypes: ["code"]
+  skipApprovalScreen: true
+enablePasswordDB: true
+staticClients:
+  - id: relaydesk-local
+    secretEnv: RELAYDESK_OIDC_CLIENT_SECRET
+    redirectURIs:
+      - http://localhost:58080/auth/callback
+    name: LenoirDesk local development
+staticPasswords:
+  - email: developer@relaydesk.invalid
+    username: local-developer
+    userID: 47ff9030-658b-43b8-9037-9e9a1c82d519
+    hashFromEnv: RELAYDESK_DEV_OIDC_HASH

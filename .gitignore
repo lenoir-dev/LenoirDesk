@@ -1,0 +1,12 @@
+.env
+.env.*
+!.env.example
+!.env.stage0.settings.example
+!.env.stage0.secrets.example
+.DS_Store
+*.log
+coverage.out
+bin/
+tmp/
+__pycache__/
+*.pyc

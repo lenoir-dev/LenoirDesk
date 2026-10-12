@@ -1,0 +1,462 @@
+{
+  "compiled_modules": [
+    {
+      "license_file": "LICENSE",
+      "license_sha256": "0db7c9ebb3717e526f34f87dd1ee8bc77d36846e29cb0cec9246f7138fbe962b",
+      "module": "github.com/beorn7/perks",
+      "notice_files": [],
+      "spdx": "MIT",
+      "version": "v1.0.1"
+    },
+    {
+      "license_file": "LICENSE",
+      "license_sha256": "5c0476add4c38b55d0ed5ac11b85e00c38f26e1caee20dfe3ab58190103d1fbc",
+      "module": "github.com/cenkalti/backoff/v5",
+      "notice_files": [],
+      "spdx": "MIT",
+      "version": "v5.0.3"
+    },
+    {
+      "license_file": "LICENSE.txt",
+      "license_sha256": "f566a9f97bacdaf00d9f21dd991e81dc11201c4e016c86b470799429a1c9a79c",
+      "module": "github.com/cespare/xxhash/v2",
+      "notice_files": [],
+      "spdx": "MIT",
+      "version": "v2.3.0"
+    },
+    {
+      "license_file": "LICENSE",
+      "license_sha256": "cb5e8e7e5f4a3988e1063c142c60dc2df75605f4c46515e776e3aca6df976e14",
+      "module": "github.com/coreos/go-oidc/v3",
+      "notice_files": [
+        {
+          "file": "NOTICE",
+          "sha256": "dccd26c6fd9c296daf44d0bc56bb4efc566edd4880381b3331c9a63e6e471338"
+        }
+      ],
+      "spdx": "Apache-2.0",
+      "version": "v3.20.0"
+    },
+    {
+      "license_file": "LICENSE",
+      "license_sha256": "a2d51b7515acfaff2f7a88688650f2fc4fd99561383e72bba2305e3db59a1647",
+      "module": "github.com/go-chi/chi/v5",
+      "notice_files": [],
+      "spdx": "MIT",
+      "version": "v5.3.2"
+    },
+    {
+      "license_file": "LICENSE",
+      "license_sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "module": "github.com/go-jose/go-jose/v4",
+      "notice_files": [],
+      "spdx": "Apache-2.0",
+      "version": "v4.1.4"
+    },
+    {
+      "license_file": "LICENSE",
+      "license_sha256": "b40930bbcf80744c86c46a12bc9da056641d722716c378f5659b9e555ef833e1",
+      "module": "github.com/go-logr/logr",
+      "notice_files": [],
+      "spdx": "Apache-2.0",
+      "version": "v1.4.4"
+    },
+    {
+      "license_file": "LICENSE",
+      "license_sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+      "module": "github.com/go-logr/stdr",
+      "notice_files": [],
+      "spdx": "Apache-2.0",
+      "version": "v1.2.2"
+    },
+    {
+      "license_file": "LICENSE",
+      "license_sha256": "0a8d61ed3cbfd5312326e8126c31ce9c627a283adc99131b56896d29ada04b2d",
+      "module": "github.com/google/uuid",
+      "notice_files": [],
+      "spdx": "BSD-3-Clause",
+      "version": "v1.6.0"
+    },
+    {
+      "license_file": "LICENSE",
+      "license_sha256": "a15b1d1b168954c92ff7fb1620382418f7c72f4f4d251ee791d1098ad68ab0c4",
+      "module": "github.com/grpc-ecosystem/grpc-gateway/v2",
+      "notice_files": [],
+      "spdx": "BSD-3-Clause",
+      "version": "v2.30.0"
+    },
+    {
+      "license_file": "LICENSE",
+      "license_sha256": "adb1663fda031df8f4344aa68f299fd87d80353e31339406742ded21dae65702",
+      "module": "github.com/jackc/pgpassfile",
+      "notice_files": [],
+      "spdx": "MIT",
+      "version": "v1.0.0"
+    },
+    {
+      "license_file": "LICENSE",
+      "license_sha256": "fc505773403fe869ed64cc2235cdd13988a427bb7e3a7e7004a3f4b27420f8fc",
+      "module": "github.com/jackc/pgservicefile",
+      "notice_files": [],
+      "spdx": "MIT",
+      "version": "v0.0.0-20240606120523-5a60cdf6a761"
+    },
+    {
+      "license_file": "LICENSE",
+      "license_sha256": "467f95e074fe23079a5623ed652619682692041b8551da27e3c2ddb9659a1507",
+      "module": "github.com/jackc/pgx/v5",
+      "notice_files": [],
+      "spdx": "MIT",
+      "version": "v5.11.0"
+    },
+    {
+      "license_file": "LICENSE",
+      "license_sha256": "2d50e98a4900b4d6457a38d39c1432fdc156fc2f7b365f2e33ec9344acbb0057",
+      "module": "github.com/jackc/puddle/v2",
+      "notice_files": [],
+      "spdx": "MIT",
+      "version": "v2.2.2"
+    },
+    {
+      "license_file": "LICENSE",
+      "license_sha256": "0d9e582ee4bff57bf1189c9e514e6da7ce277f9cd3bc2d488b22fbb39a6d87cf",
+      "module": "github.com/klauspost/compress",
+      "notice_files": [],
+      "spdx": "Apache-2.0",
+      "version": "v1.20.0"
+    },
+    {
+      "license_file": "LICENSE",
+      "license_sha256": "aa1376b9bc5dea6f30cdefde40c176a254f247d2814d0a9929395138631b2ae0",
+      "module": "github.com/munnerz/goautoneg",
+      "notice_files": [],
+      "spdx": "BSD-3-Clause",
+      "version": "v0.0.0-20191010083416-a7dc8b61c822"
+    },
+    {
+      "license_file": "LICENSE",
+      "license_sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+      "module": "github.com/nats-io/nats.go",
+      "notice_files": [],
+      "spdx": "Apache-2.0",
+      "version": "v1.54.0"
+    },
+    {
+      "license_file": "LICENSE",
+      "license_sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+      "module": "github.com/nats-io/nkeys",
+      "notice_files": [],
+      "spdx": "Apache-2.0",
+      "version": "v0.4.16"
+    },
+    {
+      "license_file": "LICENSE",
+      "license_sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+      "module": "github.com/nats-io/nuid",
+      "notice_files": [],
+      "spdx": "Apache-2.0",
+      "version": "v1.0.1"
+    },
+    {
+      "license_file": "LICENSE",
+      "license_sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+      "module": "github.com/prometheus/client_golang",
+      "notice_files": [
+        {
+          "file": "NOTICE",
+          "sha256": "8548bfb2bc1913396df38c548a6ec60b8dbcac3b0800485a40569c8bdd184471"
+        }
+      ],
+      "spdx": "Apache-2.0",
+      "version": "v1.24.1"
+    },
+    {
+      "license_file": "LICENSE",
+      "license_sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+      "module": "github.com/prometheus/client_model",
+      "notice_files": [
+        {
+          "file": "NOTICE",
+          "sha256": "6c79faa15168885fb88a316ae0df18f486deafddefdc16826cdc56dfbd421e24"
+        }
+      ],
+      "spdx": "Apache-2.0",
+      "version": "v0.6.3"
+    },
+    {
+      "license_file": "LICENSE",
+      "license_sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+      "module": "github.com/prometheus/common",
+      "notice_files": [
+        {
+          "file": "NOTICE",
+          "sha256": "600244c8052c8c1d307043fafacbc83b429c171dd8e08f5a537c0a54014585ee"
+        }
+      ],
+      "spdx": "Apache-2.0",
+      "version": "v0.72.0"
+    },
+    {
+      "license_file": "LICENSE",
+      "license_sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+      "module": "github.com/prometheus/otlptranslator",
+      "notice_files": [],
+      "spdx": "Apache-2.0",
+      "version": "v1.0.0"
+    },
+    {
+      "license_file": "LICENSE",
+      "license_sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+      "module": "github.com/prometheus/procfs",
+      "notice_files": [
+        {
+          "file": "NOTICE",
+          "sha256": "497fcdb9fae55924c12f55f05cbe83a096662e5c591d79b74e4a8f23bab5ffee"
+        }
+      ],
+      "spdx": "Apache-2.0",
+      "version": "v0.22.0"
+    },
+    {
+      "license_file": "LICENSE",
+      "license_sha256": "a3a7dff87da3927db65cb4c87b1cfbc96ca2755704461a485d457be7ae300a86",
+      "module": "github.com/redis/go-redis/v9",
+      "notice_files": [],
+      "spdx": "BSD-2-Clause",
+      "version": "v9.23.0"
+    },
+    {
+      "license_file": "LICENSE",
+      "license_sha256": "09db8d93f1ec60eb9f2be32ce2e10e440b35e209ea9fa505e84e788af938670a",
+      "module": "github.com/stripe/stripe-go/v86",
+      "notice_files": [],
+      "spdx": "MIT",
+      "version": "v86.4.2"
+    },
+    {
+      "license_file": "LICENSE",
+      "license_sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+      "module": "go.opentelemetry.io/auto/sdk",
+      "notice_files": [],
+      "spdx": "Apache-2.0",
+      "version": "v1.2.1"
+    },
+    {
+      "license_file": "LICENSE",
+      "license_sha256": "1ae07514be1d7bb33f0698f8d91fb51b8b9fe1463157ec1c72081a49b9bc6f40",
+      "module": "go.opentelemetry.io/otel",
+      "notice_files": [],
+      "spdx": "Apache-2.0",
+      "version": "v1.47.0"
+    },
+    {
+      "license_file": "LICENSE",
+      "license_sha256": "1ae07514be1d7bb33f0698f8d91fb51b8b9fe1463157ec1c72081a49b9bc6f40",
+      "module": "go.opentelemetry.io/otel/exporters/otlp/otlptrace",
+      "notice_files": [],
+      "spdx": "Apache-2.0",
+      "version": "v1.47.0"
+    },
+    {
+      "license_file": "LICENSE",
+      "license_sha256": "1ae07514be1d7bb33f0698f8d91fb51b8b9fe1463157ec1c72081a49b9bc6f40",
+      "module": "go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp",
+      "notice_files": [],
+      "spdx": "Apache-2.0",
+      "version": "v1.47.0"
+    },
+    {
+      "license_file": "LICENSE",
+      "license_sha256": "1ae07514be1d7bb33f0698f8d91fb51b8b9fe1463157ec1c72081a49b9bc6f40",
+      "module": "go.opentelemetry.io/otel/exporters/prometheus",
+      "notice_files": [],
+      "spdx": "Apache-2.0",
+      "version": "v0.69.0"
+    },
+    {
+      "license_file": "LICENSE",
+      "license_sha256": "1ae07514be1d7bb33f0698f8d91fb51b8b9fe1463157ec1c72081a49b9bc6f40",
+      "module": "go.opentelemetry.io/otel/exporters/stdout/stdoutmetric",
+      "notice_files": [],
+      "spdx": "Apache-2.0",
+      "version": "v1.47.0"
+    },
+    {
+      "license_file": "LICENSE",
+      "license_sha256": "1ae07514be1d7bb33f0698f8d91fb51b8b9fe1463157ec1c72081a49b9bc6f40",
+      "module": "go.opentelemetry.io/otel/exporters/stdout/stdouttrace",
+      "notice_files": [],
+      "spdx": "Apache-2.0",
+      "version": "v1.47.0"
+    },
+    {
+      "license_file": "LICENSE",
+      "license_sha256": "1ae07514be1d7bb33f0698f8d91fb51b8b9fe1463157ec1c72081a49b9bc6f40",
+      "module": "go.opentelemetry.io/otel/log",
+      "notice_files": [],
+      "spdx": "Apache-2.0",
+      "version": "v1.47.0"
+    },
+    {
+      "license_file": "LICENSE",
+      "license_sha256": "1ae07514be1d7bb33f0698f8d91fb51b8b9fe1463157ec1c72081a49b9bc6f40",
+      "module": "go.opentelemetry.io/otel/metric",
+      "notice_files": [],
+      "spdx": "Apache-2.0",
+      "version": "v1.47.0"
+    },
+    {
+      "license_file": "LICENSE",
+      "license_sha256": "1ae07514be1d7bb33f0698f8d91fb51b8b9fe1463157ec1c72081a49b9bc6f40",
+      "module": "go.opentelemetry.io/otel/sdk",
+      "notice_files": [],
+      "spdx": "Apache-2.0",
+      "version": "v1.47.0"
+    },
+    {
+      "license_file": "LICENSE",
+      "license_sha256": "1ae07514be1d7bb33f0698f8d91fb51b8b9fe1463157ec1c72081a49b9bc6f40",
+      "module": "go.opentelemetry.io/otel/sdk/metric",
+      "notice_files": [],
+      "spdx": "Apache-2.0",
+      "version": "v1.47.0"
+    },
+    {
+      "license_file": "LICENSE",
+      "license_sha256": "1ae07514be1d7bb33f0698f8d91fb51b8b9fe1463157ec1c72081a49b9bc6f40",
+      "module": "go.opentelemetry.io/otel/trace",
+      "notice_files": [],
+      "spdx": "Apache-2.0",
+      "version": "v1.47.0"
+    },
+    {
+      "license_file": "LICENSE",
+      "license_sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+      "module": "go.opentelemetry.io/proto/otlp",
+      "notice_files": [],
+      "spdx": "Apache-2.0",
+      "version": "v1.11.0"
+    },
+    {
+      "license_file": "LICENSE.txt",
+      "license_sha256": "edbb5a4d165ac69376c765b551c0662ff42bea87e1f1eda85f42ac90c34b09d0",
+      "module": "go.uber.org/atomic",
+      "notice_files": [],
+      "spdx": "MIT",
+      "version": "v1.12.0"
+    },
+    {
+      "license_file": "LICENSE",
+      "license_sha256": "911f8f5782931320f5b8d1160a76365b83aea6447ee6c04fa6d5591467db9dad",
+      "module": "golang.org/x/crypto",
+      "notice_files": [],
+      "spdx": "BSD-3-Clause",
+      "version": "v0.57.0"
+    },
+    {
+      "license_file": "LICENSE",
+      "license_sha256": "911f8f5782931320f5b8d1160a76365b83aea6447ee6c04fa6d5591467db9dad",
+      "module": "golang.org/x/net",
+      "notice_files": [],
+      "spdx": "BSD-3-Clause",
+      "version": "v0.60.0"
+    },
+    {
+      "license_file": "LICENSE",
+      "license_sha256": "911f8f5782931320f5b8d1160a76365b83aea6447ee6c04fa6d5591467db9dad",
+      "module": "golang.org/x/oauth2",
+      "notice_files": [],
+      "spdx": "BSD-3-Clause",
+      "version": "v0.37.0"
+    },
+    {
+      "license_file": "LICENSE",
+      "license_sha256": "911f8f5782931320f5b8d1160a76365b83aea6447ee6c04fa6d5591467db9dad",
+      "module": "golang.org/x/sync",
+      "notice_files": [],
+      "spdx": "BSD-3-Clause",
+      "version": "v0.23.0"
+    },
+    {
+      "license_file": "LICENSE",
+      "license_sha256": "911f8f5782931320f5b8d1160a76365b83aea6447ee6c04fa6d5591467db9dad",
+      "module": "golang.org/x/sys",
+      "notice_files": [],
+      "spdx": "BSD-3-Clause",
+      "version": "v0.48.0"
+    },
+    {
+      "license_file": "LICENSE",
+      "license_sha256": "911f8f5782931320f5b8d1160a76365b83aea6447ee6c04fa6d5591467db9dad",
+      "module": "golang.org/x/text",
+      "notice_files": [],
+      "spdx": "BSD-3-Clause",
+      "version": "v0.42.0"
+    },
+    {
+      "license_file": "LICENSE",
+      "license_sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "module": "google.golang.org/genproto/googleapis/api",
+      "notice_files": [],
+      "spdx": "Apache-2.0",
+      "version": "v0.0.0-20260928230214-8a89bd6388cc"
+    },
+    {
+      "license_file": "LICENSE",
+      "license_sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "module": "google.golang.org/genproto/googleapis/rpc",
+      "notice_files": [],
+      "spdx": "Apache-2.0",
+      "version": "v0.0.0-20260928230214-8a89bd6388cc"
+    },
+    {
+      "license_file": "LICENSE",
+      "license_sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "module": "google.golang.org/grpc",
+      "notice_files": [
+        {
+          "file": "NOTICE.txt",
+          "sha256": "693ff28ec216d5112ac1bbfe64ef539005867d1c7bd427b57d579683293b947f"
+        }
+      ],
+      "spdx": "Apache-2.0",
+      "version": "v1.83.2"
+    },
+    {
+      "license_file": "LICENSE",
+      "license_sha256": "4835612df0098ca95f8e7d9e3bffcb02358d435dbb38057c844c99d7f725eb20",
+      "module": "google.golang.org/protobuf",
+      "notice_files": [],
+      "spdx": "BSD-3-Clause",
+      "version": "v1.36.12"
+    }
+  ],
+  "frontend_assets": [
+    {
+      "asset": "internal/api/assets/htmx.min.js",
+      "license": "docs/licenses/htmx-0BSD.txt",
+      "license_sha256": "c0b1d4a37c85f4bbea26adb02436b665095c5baa02cf1b78d59c96dcbd064eb7",
+      "sha256": "d6fdc75f204e6bdefa99b69bf1e6d4ac69b8a364f77929f45c13476b4000f717"
+    },
+    {
+      "asset": "internal/api/assets/vanilla-calendar.css",
+      "license": "docs/licenses/vanilla-calendar-pro-MIT.txt",
+      "license_sha256": "b95f659670e7f7af29dedc3e69c1deaeee1267757729ad391318aba94108774d",
+      "sha256": "8c95d6ea7e0013056e475f78c9bf0c534b87045d113cc0b187d0f737dbadcb8b"
+    },
+    {
+      "asset": "internal/api/assets/vanilla-calendar.js",
+      "license": "docs/licenses/vanilla-calendar-pro-MIT.txt",
+      "license_sha256": "b95f659670e7f7af29dedc3e69c1deaeee1267757729ad391318aba94108774d",
+      "sha256": "3104901e40d02e560d7228262814dc1ceb52ffcab35ac6439ebdc56d444c554d"
+    }
+  ],
+  "go_license_sha256": "911f8f5782931320f5b8d1160a76365b83aea6447ee6c04fa6d5591467db9dad",
+  "schema": 2,
+  "targets": [
+    "darwin/amd64/cgo0",
+    "darwin/arm64/cgo0",
+    "linux/amd64/cgo0",
+    "linux/arm64/cgo0"
+  ]
+}

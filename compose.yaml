@@ -1,0 +1,120 @@
+name: relaydesk
+services:
+  postgres:
+    image: postgres:18.6-alpine3.23@sha256:885cf05d376c7cf27afef02073e6bdac3841252537f16e244fd1c1e6a7c99fb1
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${RELAYDESK_POSTGRES_PASSWORD:?set in .env}
+      POSTGRES_DB: postgres
+      RELAYDESK_DB_NAME: relaydesk
+      RELAYDESK_MIGRATE_PASSWORD: ${RELAYDESK_MIGRATE_PASSWORD:?set in .env}
+      RELAYDESK_RUNTIME_PASSWORD: ${RELAYDESK_RUNTIME_PASSWORD:?set in .env}
+      RELAYDESK_APP_PASSWORD: ${RELAYDESK_APP_PASSWORD:?set in .env}
+      RELAYDESK_AUTH_PASSWORD: ${RELAYDESK_AUTH_PASSWORD:?set in .env}
+    volumes:
+      - pgdata:/var/lib/postgresql
+      - ./deploy/postgres/01-roles.sh:/docker-entrypoint-initdb.d/01-roles.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d relaydesk"]
+      interval: 2s
+      timeout: 2s
+      retries: 20
+    ports: ["127.0.0.1:55432:5432"]
+  nats:
+    image: nats:2.12.4-alpine3.22@sha256:31c6ed3b2da61645aaa3ad9217b5a52b34b6ebd555ecb71259cd7723c59ae1ea
+    command: ["--jetstream", "--store_dir", "/data", "--http_port", "8222"]
+    volumes: ["natsdata:/data"]
+    ports: ["127.0.0.1:54222:4222", "127.0.0.1:58222:8222"]
+  redis:
+    image: redis:8.2.10-alpine3.22@sha256:b51665e66f00759be7c3152ad5ac3c66fb2f619c13ef62dea7cc1f9914524635
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes: ["redisdata:/data"]
+    ports: ["127.0.0.1:56379:6379"]
+  dex:
+    image: ghcr.io/dexidp/dex:v2.45.1@sha256:8499afd690c437f52301efd2b05b2455da5bd2dfc20332cd697dc9937f808462
+    entrypoint: ["dex"]
+    command: ["serve", "/etc/dex/config.yaml"]
+    environment:
+      RELAYDESK_OIDC_CLIENT_SECRET: ${RELAYDESK_OIDC_CLIENT_SECRET:?set in .env}
+      RELAYDESK_DEV_OIDC_HASH: ${RELAYDESK_DEV_OIDC_HASH:?set in .env}
+    volumes:
+      - ./deploy/dex/config.yaml:/etc/dex/config.yaml:ro
+      - ./deploy/dex/lenoirdesk.css:/srv/dex/web/themes/light/styles.css:ro
+      - ./deploy/dex/password.html:/srv/dex/web/templates/password.html:ro
+      - ./internal/api/assets/lenoirdesk-mark.svg:/srv/dex/web/themes/light/lenoirdesk-mark.svg:ro
+    ports: ["127.0.0.1:5556:5556"]
+  migrate:
+    build: .
+    environment:
+      GOOSE_DRIVER: postgres
+      GOOSE_DBSTRING: ${RELAYDESK_MIGRATION_DATABASE_URL:?set in .env}
+      GOOSE_MIGRATION_DIR: /app/migrations
+    entrypoint: ["/app/goose"]
+    command: ["up"]
+    depends_on:
+      postgres: {condition: service_healthy}
+    restart: "no"
+  api:
+    build: .
+    environment:
+      RELAYDESK_ENV: development
+      RELAYDESK_HTTP_ADDR: ":8080"
+      RELAYDESK_DATABASE_URL: ${RELAYDESK_DATABASE_URL:?set in .env}
+      RELAYDESK_APP_DATABASE_URL: ${RELAYDESK_APP_DATABASE_URL:?set in .env}
+      RELAYDESK_AUTH_DATABASE_URL: ${RELAYDESK_AUTH_DATABASE_URL:?set in .env}
+      RELAYDESK_NATS_URL: nats://nats:4222
+      RELAYDESK_REDIS_URL: redis://redis:6379
+      RELAYDESK_ENCRYPTION_KEY_B64: ${RELAYDESK_ENCRYPTION_KEY_B64:?set in .env}
+      RELAYDESK_PUBLIC_ORIGIN: http://localhost:58080
+      RELAYDESK_OIDC_ISSUER: http://127.0.0.1:5556/dex
+      RELAYDESK_OIDC_CLIENT_ID: relaydesk-local
+      RELAYDESK_OIDC_CLIENT_SECRET: ${RELAYDESK_OIDC_CLIENT_SECRET:?set in .env}
+      RELAYDESK_OIDC_REDIRECT_URL: http://localhost:58080/auth/callback
+      RELAYDESK_OIDC_BACKCHANNEL_ADDR: dex:5556
+      RELAYDESK_HUBSPOT_CLIENT_ID: ${RELAYDESK_HUBSPOT_CLIENT_ID:-}
+      RELAYDESK_HUBSPOT_CLIENT_SECRET: ${RELAYDESK_HUBSPOT_CLIENT_SECRET:-}
+      RELAYDESK_SLACK_CLIENT_ID: ${RELAYDESK_SLACK_CLIENT_ID:-}
+      RELAYDESK_SLACK_CLIENT_SECRET: ${RELAYDESK_SLACK_CLIENT_SECRET:-}
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+      dex: {condition: service_started}
+    ports: ["127.0.0.1:58080:8080"]
+  worker:
+    build: .
+    entrypoint: ["/app/worker"]
+    environment:
+      RELAYDESK_ENV: development
+      RELAYDESK_OUTBOUND_EXECUTION_ENABLED: ${RELAYDESK_OUTBOUND_EXECUTION_ENABLED:-false}
+      RELAYDESK_RESTORE_WITNESS_PATH: /var/lib/relaydesk-witness/state.json
+      RELAYDESK_HTTP_ADDR: ":8080"
+      RELAYDESK_DATABASE_URL: ${RELAYDESK_DATABASE_URL:?set in .env}
+      RELAYDESK_NATS_URL: nats://nats:4222
+      RELAYDESK_REDIS_URL: redis://redis:6379
+      RELAYDESK_ENCRYPTION_KEY_B64: ${RELAYDESK_ENCRYPTION_KEY_B64:?set in .env}
+      RELAYDESK_PROVIDER_MODE: ${RELAYDESK_PROVIDER_MODE:-}
+      RELAYDESK_HUBSPOT_CLIENT_ID: ${RELAYDESK_HUBSPOT_CLIENT_ID:-}
+      RELAYDESK_HUBSPOT_CLIENT_SECRET: ${RELAYDESK_HUBSPOT_CLIENT_SECRET:-}
+      RELAYDESK_SLACK_CLIENT_ID: ${RELAYDESK_SLACK_CLIENT_ID:-}
+      RELAYDESK_SLACK_CLIENT_SECRET: ${RELAYDESK_SLACK_CLIENT_SECRET:-}
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+      nats: {condition: service_started}
+    volumes:
+      - witnessdata:/var/lib/relaydesk-witness
+  witness:
+    profiles: [maintenance]
+    build: .
+    entrypoint: ["/app/witness"]
+    environment:
+      RELAYDESK_MIGRATION_DATABASE_URL: ${RELAYDESK_MIGRATION_DATABASE_URL:?set in .env}
+      RELAYDESK_RESTORE_WITNESS_PATH: /var/lib/relaydesk-witness/state.json
+      RELAYDESK_RESTORE_WITNESS_REASON: ${RELAYDESK_RESTORE_WITNESS_REASON:-}
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+    volumes:
+      - witnessdata:/var/lib/relaydesk-witness
+volumes:
+  pgdata:
+  natsdata:
+  redisdata:
+  witnessdata:

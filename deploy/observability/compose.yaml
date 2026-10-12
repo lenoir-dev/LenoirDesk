@@ -1,0 +1,48 @@
+services:
+  worker:
+    environment:
+      RELAYDESK_METRICS_ADDR: ":9090"
+      RELAYDESK_OTLP_TRACES_URL: "http://tempo:4318/v1/traces"
+    ports:
+      - "127.0.0.1:59090:9090"
+  prometheus:
+    image: prom/prometheus:v3.14.0@sha256:5ce7540c3c00ef4ab0c9d2c995c6a5b9c421f44b4a115d97a2c7af3b1c21cbb0
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=7d
+    volumes:
+      - ./deploy/observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./deploy/observability/alerts.yml:/etc/prometheus/alerts.yml:ro
+      - prometheus_data:/prometheus
+    ports:
+      - "127.0.0.1:59091:9090"
+    depends_on:
+      - worker
+  tempo:
+    image: grafana/tempo:3.1.0@sha256:3076b8dcdfb32fd6bc5ccef85e7b7313e6199b9cb84366257fc17ecb696db5fd
+    command: ["-target=all", "-config.file=/etc/tempo.yaml"]
+    volumes:
+      - ./deploy/observability/tempo.yaml:/etc/tempo.yaml:ro
+      - tempo_data:/var/tempo
+    ports:
+      - "127.0.0.1:53200:3200"
+  grafana:
+    image: grafana/grafana:13.2.2@sha256:ac461fb352abc50da10a51c7d02462e9c05488f11f53f14b3ad79a8145f638a0
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${RELAYDESK_GRAFANA_ADMIN_PASSWORD:?set in ignored .env.observability.secrets}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - ./deploy/observability/grafana-datasources.yaml:/etc/grafana/provisioning/datasources/relaydesk.yaml:ro
+      - ./deploy/observability/grafana-dashboards.yaml:/etc/grafana/provisioning/dashboards/relaydesk.yaml:ro
+      - ./deploy/observability/relaydesk-dashboard.json:/var/lib/grafana/dashboards/relaydesk.json:ro
+      - grafana_data:/var/lib/grafana
+    ports:
+      - "127.0.0.1:53000:3000"
+    depends_on:
+      - prometheus
+      - tempo
+volumes:
+  prometheus_data:
+  tempo_data:
+  grafana_data:

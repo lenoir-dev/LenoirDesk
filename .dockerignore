@@ -1,0 +1,10 @@
+.git
+.env
+.env.*
+!.env.example
+.DS_Store
+docs/
+!docs/licenses/
+!docs/licenses/**
+tests/
+tmp/

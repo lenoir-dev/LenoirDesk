@@ -1,0 +1,765 @@
+openapi: 3.1.0
+info:
+  title: RelayDesk API
+  version: 0.5.0
+  description: >-
+    Browser sessions are opaque PostgreSQL-backed cookies. In production the
+    cookie is __Host-relaydesk (Secure, HttpOnly, SameSite=Lax, Path=/); local
+    HTTP development uses relaydesk_dev_session. A 12-hour absolute and 30-minute
+    idle expiry apply. State-changing session requests require X-CSRF-Token from
+    GET /v1/me, or csrf_token in the supplied HTML form. Roles are checked from
+    current active membership on every tenant request. Stripe webhooks use their
+    own signature and connection binding, never browser authentication.
+servers:
+  - url: http://localhost:58080
+    description: Local Compose development
+tags:
+  - name: Authentication
+  - name: Workspaces
+  - name: Membership
+  - name: Connections
+  - name: Runs
+  - name: Billing sync
+  - name: Operations
+paths:
+  /health/live:
+    get:
+      tags: [Operations]
+      summary: Process liveness
+      responses:
+        '204': {description: Process is serving HTTP}
+  /health/ready:
+    get:
+      tags: [Operations]
+      summary: PostgreSQL and schema readiness
+      responses:
+        '204': {description: Storage is ready}
+        '503': {description: Storage unavailable}
+  /auth/login:
+    get:
+      tags: [Authentication]
+      summary: Begin OIDC authorization code flow with PKCE
+      description: Sets an HttpOnly, short-lived state cookie scoped to /auth/callback.
+      responses:
+        '302': {description: Redirect to configured OIDC provider}
+        '503': {$ref: '#/components/responses/Error'}
+  /auth/callback:
+    get:
+      tags: [Authentication]
+      summary: Consume one-time OIDC state and establish a rotated session
+      parameters:
+        - {name: state, in: query, required: true, schema: {type: string}}
+        - {name: code, in: query, required: true, schema: {type: string}}
+      responses:
+        '303': {description: Session cookie set; redirect to /}
+        '400': {$ref: '#/components/responses/Error'}
+        '503': {$ref: '#/components/responses/Error'}
+  /auth/logout:
+    post:
+      tags: [Authentication]
+      summary: Revoke current server-side session
+      security: [{productionCookie: []}, {developmentCookie: []}]
+      parameters:
+        - {$ref: '#/components/parameters/CSRF'}
+      responses:
+        '204': {description: Session revoked; HTML form submissions receive 303}
+        '401': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+  /oauth/{provider}/callback:
+    parameters:
+      - {name: provider, in: path, required: true, schema: {type: string, enum: [hubspot, slack]}}
+    get:
+      tags: [Connections]
+      summary: Consume one-time provider OAuth state and persist the verified account connection
+      description: Requires the initiating browser session and provider-specific HttpOnly state cookie; rechecks current owner membership.
+      security: [{productionCookie: []}, {developmentCookie: []}]
+      parameters:
+        - {name: state, in: query, required: true, schema: {type: string}}
+        - {name: code, in: query, required: true, schema: {type: string}}
+      responses:
+        '200': {description: Verified connection ID and status; never returns credentials}
+        '400': {$ref: '#/components/responses/Error'}
+        '401': {$ref: '#/components/responses/Error'}
+        '503': {$ref: '#/components/responses/Error'}
+  /v1/me:
+    get:
+      tags: [Authentication]
+      summary: Current verified user and per-session CSRF token
+      security: [{productionCookie: []}, {developmentCookie: []}]
+      responses:
+        '200':
+          description: Current user
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Me'}
+        '401': {$ref: '#/components/responses/Error'}
+  /v1/tenants:
+    get:
+      tags: [Workspaces]
+      summary: List current user's active workspaces
+      security: [{productionCookie: []}, {developmentCookie: []}]
+      parameters:
+        - {$ref: '#/components/parameters/Limit'}
+        - {$ref: '#/components/parameters/Cursor'}
+      responses:
+        '200':
+          description: Descending (created_at, id) keyset page
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/WorkspacePage'}
+        '400': {$ref: '#/components/responses/Error'}
+        '401': {$ref: '#/components/responses/Error'}
+    post:
+      tags: [Workspaces]
+      summary: Atomically create workspace and initial owner membership
+      security: [{productionCookie: []}, {developmentCookie: []}]
+      parameters:
+        - {$ref: '#/components/parameters/CSRF'}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [name]
+              properties: {name: {type: string, minLength: 1, maxLength: 120}}
+      responses:
+        '201':
+          description: Workspace created; role is owner
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [id, name, role]
+                properties:
+                  id: {type: string, format: uuid}
+                  name: {type: string}
+                  role: {type: string, const: owner}
+        '400': {$ref: '#/components/responses/Error'}
+        '401': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+  /v1/tenants/{tenant}:
+    parameters:
+      - {$ref: '#/components/parameters/Tenant'}
+    get:
+      tags: [Workspaces]
+      summary: Read workspace metadata
+      description: Requires active owner, operator, or viewer membership.
+      security: [{productionCookie: []}, {developmentCookie: []}]
+      responses:
+        '200':
+          description: Workspace
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Workspace'}
+        '401': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+  /v1/tenants/{tenant}/members:
+    parameters:
+      - {$ref: '#/components/parameters/Tenant'}
+    get:
+      tags: [Membership]
+      summary: List active members (owner only)
+      security: [{productionCookie: []}, {developmentCookie: []}]
+      parameters:
+        - {$ref: '#/components/parameters/Limit'}
+        - {$ref: '#/components/parameters/Cursor'}
+      responses:
+        '200':
+          description: Active member page, ordered by user ID
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items: {type: array, items: {$ref: '#/components/schemas/Member'}}
+                  next_cursor: {type: string}
+        '401': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+    post:
+      tags: [Membership]
+      summary: Grant membership to an existing user (owner only)
+      security: [{productionCookie: []}, {developmentCookie: []}]
+      parameters:
+        - {$ref: '#/components/parameters/CSRF'}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [user_id, role]
+              properties:
+                user_id: {type: string, format: uuid}
+                role: {$ref: '#/components/schemas/Role'}
+      responses:
+        '204': {description: Membership active}
+        '400': {$ref: '#/components/responses/Error'}
+        '401': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+        '404': {$ref: '#/components/responses/Error'}
+  /v1/tenants/{tenant}/members/{user}:
+    parameters:
+      - {$ref: '#/components/parameters/Tenant'}
+      - {name: user, in: path, required: true, schema: {type: string, format: uuid}}
+    patch:
+      tags: [Membership]
+      summary: Change active member role (owner only)
+      security: [{productionCookie: []}, {developmentCookie: []}]
+      parameters:
+        - {$ref: '#/components/parameters/CSRF'}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [role]
+              properties: {role: {$ref: '#/components/schemas/Role'}}
+      responses:
+        '204': {description: Role updated}
+        '401': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+        '409': {$ref: '#/components/responses/Error'}
+    delete:
+      tags: [Membership]
+      summary: Remove active member (owner only; cannot remove final owner)
+      security: [{productionCookie: []}, {developmentCookie: []}]
+      parameters:
+        - {$ref: '#/components/parameters/CSRF'}
+      responses:
+        '204': {description: Membership removed}
+        '401': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+        '409': {$ref: '#/components/responses/Error'}
+  /v1/tenants/{tenant}/connections:
+    parameters:
+      - {$ref: '#/components/parameters/Tenant'}
+    get:
+      tags: [Connections]
+      summary: List safe connection metadata
+      description: Requires active owner, operator, or viewer membership; never returns credentials.
+      security: [{productionCookie: []}, {developmentCookie: []}]
+      parameters:
+        - {$ref: '#/components/parameters/Limit'}
+        - {$ref: '#/components/parameters/Cursor'}
+      responses:
+        '200':
+          description: Descending (created_at, id) keyset page
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ConnectionPage'}
+        '400': {$ref: '#/components/responses/Error'}
+        '401': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+  /v1/tenants/{tenant}/connections/stripe-test:
+    post:
+      tags: [Connections]
+      summary: Owner-only closed-MVP Stripe Test Mode onboarding
+      description: Verifies one expected account with fixed read-only account, customer, subscription and invoice calls before encrypted storage. Neither the restricted key nor destination signing secret is returned.
+      security: [{productionCookie: []}, {developmentCookie: []}]
+      parameters: [{$ref: '#/components/parameters/Tenant'}, {$ref: '#/components/parameters/CSRF'}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [expected_account_id, restricted_key, webhook_signing_secret, webhook_ref]
+              properties:
+                expected_account_id: {type: string}
+                restricted_key: {type: string, writeOnly: true}
+                webhook_signing_secret: {type: string, writeOnly: true}
+                webhook_ref: {type: string, minLength: 64, maxLength: 64}
+                reconnect_id: {type: string, format: uuid}
+      responses:
+        '201': {description: Verified connection ID only}
+        '400': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+  /v1/tenants/{tenant}/connections/oauth/{provider}:
+    parameters:
+      - {$ref: '#/components/parameters/Tenant'}
+      - {name: provider, in: path, required: true, schema: {type: string, enum: [hubspot, slack]}}
+    post:
+      tags: [Connections]
+      summary: Start owner-authorized provider OAuth or same-account reconnect
+      security: [{productionCookie: []}, {developmentCookie: []}]
+      parameters:
+        - {$ref: '#/components/parameters/CSRF'}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [expected_account_id]
+              properties:
+                expected_account_id: {type: string, description: Approved external portal/workspace ID}
+                reconnect_id: {type: string, format: uuid, description: Existing connection; replacement account identity must match}
+      responses:
+        '201': {description: Provider authorization URL; browser state is stored in an HttpOnly cookie}
+        '400': {$ref: '#/components/responses/Error'}
+        '401': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+        '503': {$ref: '#/components/responses/Error'}
+  /v1/tenants/{tenant}/connections/{connection}:
+    parameters:
+      - {$ref: '#/components/parameters/Tenant'}
+      - {name: connection, in: path, required: true, schema: {type: string, format: uuid}}
+    get:
+      tags: [Connections]
+      summary: Get safe connection metadata by tenant-bound ID
+      security: [{productionCookie: []}, {developmentCookie: []}]
+      responses:
+        '200':
+          description: Connection
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Connection'}
+        '401': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+        '404': {$ref: '#/components/responses/Error'}
+    delete:
+      tags: [Connections]
+      summary: Disconnect tenant-owned provider connection and best-effort revoke credentials
+      description: Local credential deletion and outbound gate are durable before provider revocation. A transmitted request is not canceled retroactively.
+      security: [{productionCookie: []}, {developmentCookie: []}]
+      parameters:
+        - {$ref: '#/components/parameters/CSRF'}
+      responses:
+        '204': {description: Disconnected and provider revocation confirmed}
+        '202': {description: Disconnected locally; provider revocation unconfirmed}
+        '401': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+        '404': {$ref: '#/components/responses/Error'}
+  /v1/tenants/{tenant}/runs:
+    parameters:
+      - {$ref: '#/components/parameters/Tenant'}
+    get:
+      tags: [Runs]
+      summary: List planned runs; pending is not completed synchronization
+      security: [{productionCookie: []}, {developmentCookie: []}]
+      parameters:
+        - {$ref: '#/components/parameters/Limit'}
+        - {$ref: '#/components/parameters/Cursor'}
+        - {name: status, in: query, schema: {type: string, enum: [in_progress, blocked, pending, running, succeeded, retry_wait, blocked_auth, blocked_config, needs_attention, unknown, dead, paused, skipped, canceled, superseded]}, description: Optional status filter; in_progress and blocked group persisted states; dead is the canonical DLQ view}
+      responses:
+        '200':
+          description: Descending (created_at, id) keyset page
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/RunPage'}
+        '400': {$ref: '#/components/responses/Error'}
+        '401': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+  /webhooks/stripe/{connection_ref}:
+    post:
+      tags: [Operations]
+      summary: Receive signed Stripe snapshot webhook
+      description: >-
+        No browser session. Opaque reference selects a candidate connection;
+        Stripe-Signature verifies raw bytes before account/mode binding and
+        durable inbox acceptance. Unsupported signed events are stored ignored.
+      parameters:
+        - {name: connection_ref, in: path, required: true, schema: {type: string, minLength: 64, maxLength: 64}}
+        - {name: Stripe-Signature, in: header, required: true, schema: {type: string}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {type: object, description: Stripe event envelope, maxProperties: 1000}
+      responses:
+        '200': {description: Existing event acknowledged}
+        '202': {description: New event durably accepted}
+        '400': {$ref: '#/components/responses/WebhookError'}
+        '404': {$ref: '#/components/responses/WebhookError'}
+        '413': {$ref: '#/components/responses/WebhookError'}
+        '503': {$ref: '#/components/responses/WebhookError'}
+  /:
+    get:
+      tags: [Operations]
+      summary: Server-rendered sign-in or workspace list
+      parameters:
+        - {$ref: '#/components/parameters/Cursor'}
+      responses:
+        '200': {description: HTML page, content: {text/html: {schema: {type: string}}}}
+  /ui/tenants:
+    post:
+      tags: [Workspaces]
+      summary: Create workspace from HTML form
+      security: [{productionCookie: []}, {developmentCookie: []}]
+      description: Requires csrf_token form field; redirects to the new workspace.
+      responses:
+        '303': {description: Workspace created}
+        '400': {description: Invalid form}
+        '401': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+  /ui/tenants/{tenant}:
+    get:
+      tags: [Workspaces]
+      summary: Server-rendered workspace overview
+      security: [{productionCookie: []}, {developmentCookie: []}]
+      parameters:
+        - {$ref: '#/components/parameters/Tenant'}
+      responses:
+        '200': {description: HTML overview, content: {text/html: {schema: {type: string}}}}
+        '403': {description: HTML authorization error}
+  /v1/tenants/{tenant}/overview:
+    get:
+      tags: [Workspaces]
+      summary: Tenant-scoped persisted run counts, backlog, last success and recent signed events
+      security: [{productionCookie: []}, {developmentCookie: []}]
+      parameters: [{$ref: '#/components/parameters/Tenant'}]
+      responses:
+        '200': {description: Operational overview}
+        '403': {$ref: '#/components/responses/Error'}
+  /v1/tenants/{tenant}/reconciliation:
+    get:
+      tags: [Operations]
+      summary: Tenant-scoped reconciliation checkpoints, gaps, requests and execution ages
+      description: Viewer, operator or owner. Reads persisted state; HTTP readiness alone does not imply business progress.
+      security: [{productionCookie: []}, {developmentCookie: []}]
+      parameters: [{$ref: '#/components/parameters/Tenant'}]
+      responses:
+        '200': {description: Reconciliation and operational status without credentials}
+        '403': {$ref: '#/components/responses/Error'}
+  /v1/tenants/{tenant}/reconciliations:
+    post:
+      tags: [Operations]
+      summary: Request an audited bounded historical Stripe Test Mode scan
+      description: Owner/operator only. At most 500 events, at most 29 days old, ending at least two minutes ago. Historical invoice facts never produce Slack notifications. The connected Stripe key needs Events Read; a missing grant produces a visible permission gap.
+      security: [{productionCookie: []}, {developmentCookie: []}]
+      parameters: [{$ref: '#/components/parameters/Tenant'}, {$ref: '#/components/parameters/CSRF'}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [connection_id, from_at, to_at, max_events, reason]
+              properties:
+                connection_id: {type: string, format: uuid}
+                from_at: {type: string, format: date-time}
+                to_at: {type: string, format: date-time}
+                max_events: {type: integer, minimum: 1, maximum: 500}
+                reason: {type: string, minLength: 12, maxLength: 500}
+      responses:
+        '201': {description: Persisted request ID and pending status}
+        '400': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+  /v1/tenants/{tenant}/billing-sync/revisions:
+    get:
+      tags: [Billing sync]
+      summary: At most 20 most recent immutable configuration revisions
+      security: [{productionCookie: []}, {developmentCookie: []}]
+      parameters: [{$ref: '#/components/parameters/Tenant'}]
+      responses:
+        '200': {description: Revision list with active pause gate}
+        '403': {$ref: '#/components/responses/Error'}
+  /v1/tenants/{tenant}/billing-sync:
+    post:
+      tags: [Billing sync]
+      summary: Activate a new immutable subscription_billing_sync.v1 revision
+      description: Owner/operator only. All three connection IDs must belong to this tenant and share the simulation or test environment. Execution currently runs only in simulation mode.
+      security: [{productionCookie: []}, {developmentCookie: []}]
+      parameters: [{$ref: '#/components/parameters/Tenant'}, {$ref: '#/components/parameters/CSRF'}]
+      requestBody:
+        required: true
+        content: {application/json: {schema: {$ref: '#/components/schemas/BillingConfig'}}}
+      responses:
+        '201': {description: Revision created, content: {application/json: {schema: {type: object, properties: {revision_id: {type: string, format: uuid}}}}}}
+        '400': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+  /v1/tenants/{tenant}/billing-sync/{stripe}:
+    get:
+      tags: [Billing sync]
+      summary: Read active template revision and pause gate
+      security: [{productionCookie: []}, {developmentCookie: []}]
+      parameters: [{$ref: '#/components/parameters/Tenant'}, {$ref: '#/components/parameters/StripeConnection'}]
+      responses:
+        '200': {description: Active revision, content: {application/json: {schema: {type: object, properties: {revision_id: {type: string, format: uuid}, revision: {type: integer}, status: {type: string}, paused: {type: boolean}, config: {$ref: '#/components/schemas/BillingConfig'}}}}}}
+        '403': {$ref: '#/components/responses/Error'}
+        '404': {$ref: '#/components/responses/Error'}
+  /v1/tenants/{tenant}/billing-sync/{stripe}/pause:
+    post:
+      tags: [Billing sync]
+      summary: Pause or resume outbound execution without dropping accepted work
+      security: [{productionCookie: []}, {developmentCookie: []}]
+      parameters: [{$ref: '#/components/parameters/Tenant'}, {$ref: '#/components/parameters/StripeConnection'}, {$ref: '#/components/parameters/CSRF'}]
+      requestBody: {required: true, content: {application/json: {schema: {type: object, required: [paused], properties: {paused: {type: boolean}}}}}}
+      responses:
+        '204': {description: Gate changed}
+        '403': {$ref: '#/components/responses/Error'}
+  /v1/tenants/{tenant}/contact-links:
+    get:
+      tags: [Billing sync]
+      summary: Read an exact tenant-scoped Contact mapping
+      security: [{productionCookie: []}, {developmentCookie: []}]
+      parameters:
+        - {$ref: '#/components/parameters/Tenant'}
+        - {name: hubspot_connection_id, in: query, required: true, schema: {type: string, format: uuid}}
+        - {name: customer_key, in: query, required: true, schema: {type: string}}
+      responses:
+        '200': {description: Mapping metadata}
+        '404': {$ref: '#/components/responses/Error'}
+    post:
+      tags: [Billing sync]
+      summary: Bind a Stripe customer key to a known HubSpot Contact ID
+      security: [{productionCookie: []}, {developmentCookie: []}]
+      parameters: [{$ref: '#/components/parameters/Tenant'}, {$ref: '#/components/parameters/CSRF'}]
+      requestBody: {required: true, content: {application/json: {schema: {type: object, required: [hubspot_connection_id, customer_key, contact_id, reason], properties: {hubspot_connection_id: {type: string, format: uuid}, customer_key: {type: string}, contact_id: {type: string}, reason: {type: string}}}}}}
+      responses:
+        '204': {description: Link recorded}
+        '403': {$ref: '#/components/responses/Error'}
+        '409': {$ref: '#/components/responses/Error'}
+  /v1/tenants/{tenant}/contacts/preview:
+    get:
+      tags: [Billing sync]
+      summary: Operator-only live Contact identity read; missing, archived or conflicting identities cannot be bound
+      security: [{productionCookie: []}, {developmentCookie: []}]
+      parameters:
+        - {$ref: '#/components/parameters/Tenant'}
+        - {name: hubspot_connection_id, in: query, required: true, schema: {type: string, format: uuid}}
+        - {name: customer_key, in: query, required: true, schema: {type: string}}
+        - {name: contact_id, in: query, required: true, schema: {type: string}}
+      responses:
+        '200': {description: Contact ID, managed key and identity status only}
+        '409': {$ref: '#/components/responses/Error'}
+  /v1/tenants/{tenant}/runs/{run}:
+    get:
+      tags: [Runs]
+      summary: Read a run with action status, attempts, and confirmed references
+      security: [{productionCookie: []}, {developmentCookie: []}]
+      parameters: [{$ref: '#/components/parameters/Tenant'}, {name: run, in: path, required: true, schema: {type: string, format: uuid}}]
+      responses:
+        '200': {description: Run detail, content: {application/json: {schema: {$ref: '#/components/schemas/RunDetail'}}}}
+        '403': {$ref: '#/components/responses/Error'}
+        '404': {$ref: '#/components/responses/Error'}
+  /v1/tenants/{tenant}/actions/{action}/retry:
+    post:
+      tags: [Runs]
+      summary: Retry one eligible dead, blocked, or needs-attention action
+      description: Owner/operator only. Rejects running, succeeded, and unknown. The original effect key and immutable revision remain unchanged; PostgreSQL schedules a new dispatch. Idempotency-Key header or request-body idempotency_key may be supplied.
+      security: [{productionCookie: []}, {developmentCookie: []}]
+      parameters: [{$ref: '#/components/parameters/Tenant'}, {$ref: '#/components/parameters/Action'}, {$ref: '#/components/parameters/CSRF'}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/RecoveryRequest'}}}}
+      responses:
+        '200': {description: Durable decision, content: {application/json: {schema: {$ref: '#/components/schemas/RecoveryResult'}}}}
+        '400': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+        '404': {$ref: '#/components/responses/Error'}
+        '409': {$ref: '#/components/responses/Error'}
+  /v1/tenants/{tenant}/actions/{action}/resolve:
+    post:
+      tags: [Runs]
+      summary: Resolve an unknown Slack effect
+      description: Owner/operator only. confirm_unknown requires the original channel and a Slack timestamp and records operator confirmation, not provider verification. leave_unknown records a reason. risk_retry requires acknowledge_duplicate_risk=true and can produce a duplicate message.
+      security: [{productionCookie: []}, {developmentCookie: []}]
+      parameters: [{$ref: '#/components/parameters/Tenant'}, {$ref: '#/components/parameters/Action'}, {$ref: '#/components/parameters/CSRF'}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/RecoveryRequest'}}}}
+      responses:
+        '200': {description: Durable decision, content: {application/json: {schema: {$ref: '#/components/schemas/RecoveryResult'}}}}
+        '400': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+        '404': {$ref: '#/components/responses/Error'}
+        '409': {$ref: '#/components/responses/Error'}
+  /ui/tenants/{tenant}/billing-sync:
+    get: {tags: [Billing sync], summary: HTML configuration form, responses: {'200': {description: HTML form}}}
+    post: {tags: [Billing sync], summary: Activate reviewed immutable revision, responses: {'303': {description: Redirect to automation}}}
+  /ui/tenants/{tenant}/connections:
+    get: {tags: [Connections], summary: HTML provider account identity and credential health, responses: {'200': {description: HTML connections}}}
+  /ui/tenants/{tenant}/connections/stripe/new:
+    get: {tags: [Connections], summary: Owner-only Stripe Test Mode setup and new opaque webhook path, responses: {'200': {description: HTML setup}}}
+  /ui/tenants/{tenant}/connections/stripe:
+    post: {tags: [Connections], summary: Owner-only verified Stripe Test Mode setup, responses: {'303': {description: Redirect to connections}}}
+  /ui/tenants/{tenant}/connections/{connection}/disconnect:
+    post: {tags: [Connections], summary: Owner-only disconnect, responses: {'303': {description: Redirect to connections}}}
+  /ui/tenants/{tenant}/connections/oauth/{provider}:
+    post: {tags: [Connections], summary: Owner-only HubSpot or Slack OAuth start, responses: {'303': {description: Provider authorization redirect}}}
+  /ui/tenants/{tenant}/billing-sync/preview:
+    post: {tags: [Billing sync], summary: Validate connections and show expected behavior before activation, responses: {'200': {description: HTML preview}}}
+  /ui/tenants/{tenant}/billing-sync/pause:
+    post: {tags: [Billing sync], summary: Submit HTML pause or resume form, responses: {'303': {description: Redirect to workspace}}}
+  /ui/tenants/{tenant}/runs/{run}:
+    get: {tags: [Runs], summary: HTML action history and outcome, responses: {'200': {description: HTML run detail}}}
+  /ui/tenants/{tenant}/runs:
+    get: {tags: [Runs], summary: Cursor-paginated and filtered HTML history, responses: {'200': {description: HTML history}}}
+  /ui/tenants/{tenant}/reconciliation:
+    get: {tags: [Operations], summary: HTML reconciliation status and operational backlog, responses: {'200': {description: HTML status}}}
+    post: {tags: [Operations], summary: Submit reviewed bounded scan as owner or operator, responses: {'303': {description: Redirect to status}}}
+  /ui/tenants/{tenant}/reconciliation/preview:
+    post: {tags: [Operations], summary: Preview bounded scan before submission, responses: {'200': {description: HTML preview}}}
+  /ui/tenants/{tenant}/runs/{run}/mapping:
+    get: {tags: [Billing sync], summary: HTML Contact mapping and live identity review, responses: {'200': {description: HTML mapping}}}
+    post: {tags: [Billing sync], summary: Audited explicit Contact bind with reason, responses: {'303': {description: Redirect to run detail}}}
+  /ui/tenants/{tenant}/runs/{run}/actions/{action}/recover:
+    post: {tags: [Runs], summary: Owner/operator HTML recovery form, responses: {'303': {description: Redirect to run detail}, '409': {description: Stale or invalid decision}}}
+components:
+  securitySchemes:
+    productionCookie: {type: apiKey, in: cookie, name: __Host-relaydesk}
+    developmentCookie: {type: apiKey, in: cookie, name: relaydesk_dev_session}
+  parameters:
+    Tenant: {name: tenant, in: path, required: true, schema: {type: string, format: uuid}}
+    StripeConnection: {name: stripe, in: path, required: true, schema: {type: string, format: uuid}}
+    Action: {name: action, in: path, required: true, schema: {type: string, format: uuid}}
+    Limit: {name: limit, in: query, schema: {type: integer, minimum: 1, maximum: 100, default: 20}}
+    Cursor: {name: cursor, in: query, schema: {type: string}, description: Opaque keyset cursor; members ascend by user_id while other lists descend by created_at and id}
+    CSRF: {name: X-CSRF-Token, in: header, required: true, schema: {type: string}, description: Per-session token returned by GET /v1/me}
+  responses:
+    Error:
+      description: Safe error with stable code and correlation ID
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/Error'}
+    WebhookError:
+      description: Webhook ingress error; X-Request-Id header carries correlation ID
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [error]
+            properties: {error: {type: string}}
+  schemas:
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, request_id]
+          properties:
+            code: {type: string, enum: [invalid_request, invalid_name, invalid_pagination, invalid_cursor, invalid_role, invalid_membership_change, user_not_found, last_owner, unauthenticated, forbidden, not_found, csrf_invalid, invalid_oidc_flow, invalid_provider_flow, provider_connection_unavailable, auth_unavailable, storage_unavailable, tenant_capacity_exhausted, activation_must_be_future_only, invalid_billing_configuration]}
+            request_id: {type: string}
+    Role: {type: string, enum: [owner, operator, viewer]}
+    Me:
+      type: object
+      required: [id, email, issuer, csrf_token, session_expires_at]
+      properties:
+        id: {type: string, format: uuid}
+        email: {type: string}
+        issuer: {type: string, format: uri}
+        csrf_token: {type: string}
+        session_expires_at: {type: string, format: date-time}
+    Workspace:
+      type: object
+      required: [id, name, role, created_at]
+      properties:
+        id: {type: string, format: uuid}
+        name: {type: string}
+        role: {$ref: '#/components/schemas/Role'}
+        created_at: {type: string, format: date-time}
+    Member:
+      type: object
+      required: [user_id, role, status]
+      properties:
+        user_id: {type: string, format: uuid}
+        role: {$ref: '#/components/schemas/Role'}
+        status: {type: string, const: active}
+    Connection:
+      type: object
+      required: [id, provider, provider_account_id, mode, status, health_status, generation, created_at]
+      properties:
+        id: {type: string, format: uuid}
+        provider: {type: string, enum: [stripe, hubspot, slack]}
+        provider_account_id: {type: string}
+        mode: {type: string, enum: [test, live]}
+        status: {type: string, enum: [pending_validation, active, disconnected]}
+        health_status: {type: string, enum: [unverified, verified, degraded, invalid]}
+        generation: {type: integer, format: int64, minimum: 1}
+        created_at: {type: string, format: date-time}
+    Run:
+      type: object
+      required: [id, status, created_at]
+      properties:
+        id: {type: string, format: uuid}
+        status: {type: string, enum: [pending, running, succeeded, retry_wait, blocked_auth, blocked_config, needs_attention, unknown, dead, paused, skipped, canceled, superseded]}
+        created_at: {type: string, format: date-time}
+    WorkspacePage:
+      type: object
+      required: [items, next_cursor]
+      properties:
+        items: {type: array, items: {$ref: '#/components/schemas/Workspace'}}
+        next_cursor: {type: string}
+    ConnectionPage:
+      type: object
+      required: [items, next_cursor]
+      properties:
+        items: {type: array, items: {$ref: '#/components/schemas/Connection'}}
+        next_cursor: {type: string}
+    RunPage:
+      type: object
+      required: [items, next_cursor]
+      properties:
+        items: {type: array, items: {$ref: '#/components/schemas/Run'}}
+        next_cursor: {type: string}
+    BillingConfig:
+      type: object
+      additionalProperties: false
+      required: [template, stripe_connection_id, hubspot_connection_id, slack_connection_id, slack_channel_id, tracked_price_ids, creation_policy, activation_time]
+      properties:
+        template: {type: string, const: subscription_billing_sync.v1}
+        stripe_connection_id: {type: string, format: uuid}
+        hubspot_connection_id: {type: string, format: uuid}
+        slack_connection_id: {type: string, format: uuid}
+        slack_channel_id: {type: string}
+        tracked_price_ids: {type: array, minItems: 1, maxItems: 20, items: {type: string}}
+        creation_policy: {type: string, enum: [explicit_only, unique_upsert]}
+        activation_time: {type: string, format: date-time}
+    RecoveryRequest:
+      type: object
+      additionalProperties: false
+      required: [reason, expected_generation]
+      properties:
+        decision: {type: string, enum: [confirm_unknown, leave_unknown, risk_retry], description: Required for resolve; retry sets manual_retry from the route}
+        reason: {type: string, minLength: 1, maxLength: 1000}
+        expected_generation: {type: integer, format: int64, minimum: 1}
+        idempotency_key: {type: string, minLength: 1, maxLength: 128}
+        external_channel: {type: string, description: Must equal the immutable configured Slack destination for confirm_unknown}
+        external_ts: {type: string, pattern: '^[0-9]{10,16}\.[0-9]{6}$'}
+        acknowledge_duplicate_risk: {type: boolean, description: Required true for risk_retry}
+    RecoveryResult:
+      type: object
+      required: [decision_id, status, generation]
+      properties:
+        decision_id: {type: string, format: uuid}
+        status: {type: string}
+        generation: {type: integer, format: int64}
+    RunDetail:
+      type: object
+      required: [id, status, event_id, event_type, revision_id, actions, created_at]
+      properties:
+        id: {type: string, format: uuid}
+        status: {type: string}
+        event_id: {type: string}
+        event_type: {type: string}
+        revision_id: {type: string, format: uuid}
+        customer_id: {type: string}
+        invoice_id: {type: string}
+        created_at: {type: string, format: date-time}
+        actions:
+          type: array
+          items:
+            type: object
+            required: [id, kind, status, attempts]
+            properties:
+              id: {type: string, format: uuid}
+              kind: {type: string, enum: [crm_projection, slack_invoice_paid]}
+              status: {type: string}
+              attempts: {type: integer}
+              generation: {type: integer, format: int64}
+              error_class: {type: string}
+              next_attempt_at: {type: string, format: date-time}
+              first_failed_at: {type: string, format: date-time}
+              last_failed_at: {type: string, format: date-time}
+              confirmation_source: {type: string, enum: [provider, operator]}
+              resolution_reason: {type: string}
+              timeline: {type: array, items: {type: object, description: Persisted attempts with safe provider-call metadata}}
+              decisions: {type: array, items: {type: object, description: Audited operator decisions}}
+              contact_id: {type: string}
+              slack_channel: {type: string}
+              slack_ts: {type: string}

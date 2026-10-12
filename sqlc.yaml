@@ -1,0 +1,13 @@
+version: '2'
+sql:
+  - engine: postgresql
+    queries: db/queries
+    schema: migrations
+    gen:
+      go:
+        package: dbgen
+        out: internal/dbgen
+        sql_package: pgx/v5
+        overrides:
+          - db_type: uuid
+            go_type: string

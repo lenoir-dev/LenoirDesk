@@ -1,0 +1,65 @@
+rule_files:
+  - alerts.yml
+evaluation_interval: 1m
+tests:
+  - interval: 1m
+    input_series:
+      - series: 'relaydesk_operational_value{measure="oldest_outbox_seconds",job="relaydesk-worker"}'
+        values: '0 400 400 400 400 400 400 400'
+      - series: 'relaydesk_operational_value{measure="coverage_gaps",job="relaydesk-worker"}'
+        values: '0 1 1 1 1 1 1 1'
+      - series: 'relaydesk_operational_value{measure="sample_age_seconds",job="relaydesk-worker"}'
+        values: '0 0 0 120 120 120 120 120'
+      - series: 'relaydesk_operational_value{measure="broker_connected",job="relaydesk-worker"}'
+        values: '1 1 1 1 1 1 1 1'
+      - series: 'up{job="relaydesk-worker"}'
+        values: '1 1 1 1 1 1 1 1'
+      - series: 'relaydesk_worker_outbound_enabled{job="relaydesk-worker"}'
+        values: '0 0 0 0 1 1 1 1'
+      - series: 'relaydesk_provider_events_total{kind="blocked_auth",provider="hubspot"}'
+        values: '0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18'
+    alert_rule_test:
+      - eval_time: 1m
+        alertname: RelayDeskOutboundDisabled
+        exp_alerts: []
+      - eval_time: 3m
+        alertname: RelayDeskOutboundDisabled
+        exp_alerts:
+          - exp_labels: {job: relaydesk-worker, severity: critical}
+            exp_annotations:
+              summary: RelayDesk worker is idle because outbound execution is disabled
+              runbook: docs/runbooks/operations.md#worker-crash-or-restart
+      - eval_time: 5m
+        alertname: RelayDeskOutboundDisabled
+        exp_alerts: []
+      - eval_time: 4m
+        alertname: RelayDeskOutboxDelayed
+        exp_alerts: []
+      - eval_time: 6m
+        alertname: RelayDeskOutboxDelayed
+        exp_alerts:
+          - exp_labels: {measure: oldest_outbox_seconds, job: relaydesk-worker, severity: warning}
+            exp_annotations:
+              summary: Unpublished outbox item older than five minutes
+              runbook: docs/runbooks/operations.md#nats-unavailable
+      - eval_time: 6m
+        alertname: RelayDeskCoverageGap
+        exp_alerts:
+          - exp_labels: {measure: coverage_gaps, job: relaydesk-worker, severity: warning}
+            exp_annotations:
+              summary: Stripe reconciliation has an unscanned period
+              runbook: docs/runbooks/operations.md#reconciliation-coverage-gap
+      - eval_time: 6m
+        alertname: RelayDeskDatabaseObservationStale
+        exp_alerts:
+          - exp_labels: {measure: sample_age_seconds, job: relaydesk-worker, severity: critical}
+            exp_annotations:
+              summary: Worker cannot refresh PostgreSQL business health
+              runbook: docs/runbooks/operations.md#postgresql-unavailable
+      - eval_time: 18m
+        alertname: RelayDeskAuthFailures
+        exp_alerts:
+          - exp_labels: {kind: blocked_auth, provider: hubspot, severity: warning}
+            exp_annotations:
+              summary: Persistent provider authentication failures
+              runbook: docs/runbooks/operations.md#oauth-token-expired-or-revoked

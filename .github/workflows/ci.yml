@@ -1,0 +1,60 @@
+name: CI
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      COMPOSE_PROJECT_NAME: relaydesk
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Verify formatting
+        run: test -z "$(gofmt -l cmd internal tests scripts/*.go)"
+      - name: Vet and build
+        run: go vet ./... && go build ./cmd/...
+      - name: Unit and race tests
+        run: go test -race ./...
+      - uses: golangci/golangci-lint-action@4afd733a84b1f43292c63897423277bb7f4313a9 # v8
+        with:
+          version: v2.14.0
+          args: ./...
+      - name: Vulnerability scan
+        run: go run golang.org/x/vuln/cmd/govulncheck@v1.8.0 ./...
+      - name: Verify sqlc generated code
+        run: go install github.com/sqlc-dev/sqlc/cmd/sqlc@v1.31.1 && make sqlc-check
+      - name: Source and history publication preflight
+        run: make publication-gate
+      - name: Build and record exact local images
+        run: make env && make image-manifest
+      - name: Start and migrate local stack without rebuilding
+        run: make local-roles && docker compose up -d --no-build
+      - name: Fresh database migration and repeatability
+        run: python3 scripts/migration_smoke.py
+      - name: Integration and outage scenarios
+        run: RELAYDESK_TEST_ENV_FILE=.env go test -race -tags integration -count=1 -v ./tests/integration
+      - name: Real local OIDC login smoke
+        run: make oidc-smoke-no-build
+      - name: Clock preflight
+        run: make clock-preflight
+      - name: Exact image layer publication scan
+        run: |
+          python3 scripts/safe_publish.py --image relaydesk-api:latest
+          python3 scripts/safe_publish.py --image relaydesk-worker:latest
+          python3 scripts/safe_publish.py --image relaydesk-migrate:latest
+      - name: Service status on failure
+        if: failure()
+        run: |
+          if test -f .env; then
+            docker compose ps
+          else
+            echo "Local stack was not started."
+          fi
